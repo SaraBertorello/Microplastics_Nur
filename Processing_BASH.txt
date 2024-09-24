@@ -1,0 +1,48 @@
+### 1- Unzip della cartella compressa con i files
+
+unzip '*.zip'
+
+### 2- Importo files in qiime2
+
+conda activate qiime2-2022.11
+
+qiime tools import   --type 'SampleData[PairedEndSequencesWithQuality]' --input-path Sequenze_microplastiche  --input-format CasavaOneEightSingleLanePerSampleDirFmt --output-path paired-end-demux.qza
+
+### 4- Rimozione dei primer con cutadapt
+
+qiime cutadapt trim-paired --i-demultiplexed-sequences paired-end-demux.qza --p-front-f CCTACGGGNGGCWGCAG --p-front-r GACTACHVGGGTATCTAATCC --p-discard-untrimmed --o-trimmed-sequences  trim-seqs.qza --p-cores 7 --verbose > cutadapt_summary.txt
+
+### 5- Dati di qualità 
+
+qiime demux summarize --i-data trim-seqs.qza --o-visualization quality --p-n 100000 
+
+### 6- DADA2 cut
+
+qiime dada2 denoise-paired --i-demultiplexed-seqs trim-seqs.qza --p-trunc-len-f 228 --p-trunc-len-r 214 --o-table Featuredada.qza --o-representative-sequences data-trunc.qza --o-denoising-stats denoising-stats.qza --p-n-threads 0
+
+qiime metadata tabulate --m-input-file denoising-stats.qza --o-visualization stats-dada2.qzv    #vedere le % 
+
+qiime feature-table tabulate-seqs --i-data data-trunc.qza --o-visualization rep-seqs.qzv        #quante seq sono passate
+
+qiime tools export --input-path data-trunc.qza --output-path ./  #file da usare in Bowtie2
+
+### 7- Rimozione possibile genoma murino dalle sequenze
+
+conda deactivate
+
+conda activate Bowtie2
+
+bowtie2 -x INDEXED_mouse_GRCm39_BOWTIE2/GRCm39 -U dna-sequences.fasta --un filtered.fasta -S Microplastic_mouse_SAM.txt  -f -p 5 --al ./bowtie_fail.txt
+
+
+# reimporto in qiime2 le seq
+
+conda deactivate
+
+conda activate qiime2-2022.11
+
+qiime tools import --type FeatureData[Sequence] --input-path filtered.fasta --output-path ./import_filtered
+
+qiime feature-classifier classify-sklearn --i-classifier SILVA_138_V3V4_BayesClassifier.qza --i-reads import_filtered.qza --o-classification taxonomy.qza
+
+qiime metadata tabulate --m-input-file taxonomy.qza --o-visualization taxonomy
