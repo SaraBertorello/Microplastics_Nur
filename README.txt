@@ -4,6 +4,7 @@ Study: Treatment of mice with microplastics (4 weeks)
 
 Sequencing: Illumina Miseq (2x300pb) 16s rRNA gene
 Primers: (F) CCTACGGGNGGCWGCAG (R) GACTACHVGGGTATCTAATCC
+DOI: https://doi.org/10.1016/j.impact.2024.100531 
 
 ABSTRACT
 Concern has grown over potential health effects of micro- and nanoplastics (NPs) exposure. There
